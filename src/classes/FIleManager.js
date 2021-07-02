@@ -10,6 +10,9 @@ const FileManager = {
         }
 
         return null;
+    },
+    printCSV: (toBePrinted) => {
+        return true;
     }
 };
 

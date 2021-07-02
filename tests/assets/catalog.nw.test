@@ -1,0 +1,49 @@
+test "Verify catalog access for plus user" {
+  description "The UI show show a catalog for a plus user and items and assemblies should be clickable"
+
+  tags "catalog","nightwatch"
+
+  step "CreateUser", "user", {
+    webUrl "{{ webUrl }}"
+    apiUrl "{{ apiUrl }}"
+  }
+
+  step "stackdb.ChangeCompanySubscriptionPlusForever", "plus", {
+    companyId "{{ step.user.companyId }}"
+  }
+
+  step "RunNightwatchSuite", "nightwatch", {
+    webUrl        "{{ webUrl }}"
+    userId        "{{ step.user.id }}"
+    testFile      "dist/tests/catalog/plusUserCatalog.js"
+    testTitle     "Should show catalog and items and assemblies for plus user"
+    testData      '''{"cookieValue"         : "{{ step.user.authCookie }}",
+                  "location"            : "/app/#/CompanySettings"}'''
+
+  }
+}
+
+test "Verify catalog access for pro user" {
+  description "The UI show show a catalog for a pro user and items and assemblies should be clickable"
+
+  tags "catalog","nightwatch"
+
+  step "CreateUser", "user", {
+    webUrl "{{ webUrl }}"
+    apiUrl "{{ apiUrl }}"
+  }
+
+  step "stackdb.ChangeCompanySubscriptionProForever", "pro", {
+    companyId "{{ step.user.companyId }}"
+  }
+
+  step "RunNightwatchSuite", "nightwatch", {
+    webUrl        "{{ webUrl }}"
+    userId        "{{ step.user.id }}"
+    testFile      "dist/tests/catalog/proUserCatalog.js"
+    testTitle     "Should show catalog and items and assemblies for pro user"
+    testData      '''{"cookieValue"         : "{{ step.user.authCookie }}",
+                  "location"            : "/app/#/CompanySettings"}'''
+
+  }
+}

@@ -1,0 +1,391 @@
+test "Should not allow viewer to add items or assemblies" {
+  tags "security", "permission"
+
+  step "TestBaselineProject1", "baseline", {
+    apiUrl "{{ apiUrl }}"
+    subscriptionId         "{{subscriptionPro}}"
+    subscriptionTermId     "{{termForever}}"
+    subscriptionStatusId    1
+    userLevelId            "{{userLevelViewer}}"
+  }
+
+  //===== Add Items =====
+
+  step "AddItemToTemplate", "addItemToTemplate", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.baseline.authCookie }}"
+    itemId            "96720"
+    takeoffTemplateId "{{ step.baseline.areaTakeoffTemplateId }}"
+  }
+
+  //===== Add Assemblies =====
+  step "AddAssemblyToTemplate", "addAssemblyToTemplate", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.baseline.authCookie }}"
+    takeoffTemplateId "{{ step.baseline.countTakeoffTemplateId }}"
+    assemblyId        15101
+    name              "someName"
+    customId          123
+    uomId             7 //each
+    assemblyFolderId  9856
+  }
+
+  step "SetAssemblyVariableValue", "setAssemblyVariableValue", {
+    apiUrl                                  "{{ apiUrl }}"
+    authCookie                              "{{ step.baseline.authCookie }}"
+    assyAssemblyVarId                       18927
+    takeoffTemplateId                       "{{ step.baseline.countTakeoffTemplateId }}"
+    value                                   12
+  }
+
+  step "SetAssemblyItemGroupSelection", "setItemGroupSelection1", {
+    apiUrl                                  "{{ apiUrl }}"
+    authCookie                              "{{ step.baseline.authCookie }}"
+    takeoffTemplateId                       "{{ step.baseline.countTakeoffTemplateId }}"
+    assyItemGroupId                         27364
+    assyItemId                              99949
+  }
+
+  assertions {
+    eq "false",         "{{ step.addItemToTemplate.success }}"
+    eq "false",         "{{ step.addAssemblyToTemplate.success }}"
+    eq "false",         "{{ step.setAssemblyVariableValue.success }}"
+    eq "false",         "{{ step.setItemGroupSelection1.success }}"
+  }
+}
+
+test "Should Allow Get Requests" {
+  description "All roles can reference a Get method"
+  tags "security", "permission"
+
+  step "CreateUser", "user", {
+    webUrl "{{ webUrl }}"
+    apiUrl "{{ apiUrl }}"
+  }
+
+  step "GetPermissions", "permission", {
+    apiUrl "{{ apiUrl }}"
+    authCookie "{{ step.user.authCookie }}"
+  }
+
+  assertions {
+    eq "company.project-view,company.project-manage,company.library-view,company.library-manage,company.cost-view,company.cost-manage,company.admin-view,company.admin-manage,company.material-view,company.material-manage,company.company-view", "{{ step.permission.permissions }}"
+  }
+}
+
+test "Should allow Viewer to access project" {
+  description "Viewer should be able to get information on projects within their own company owned by their own company"
+  tags "security", "permission"
+
+  step "GenerateRandomEmailAddress", "accountOwnerEmail", {
+    domain "test.invalid"
+  }
+
+  step "CreateUser", "accountOwner", {
+    webUrl "{{ webUrl }}"
+    apiUrl "{{ apiUrl }}"
+    email  "{{ step.accountOwnerEmail.email }}"
+  }
+
+  step "AddViewerToCompany", "viewer", {
+    apiUrl "{{ apiUrl }}"
+    companyId "{{step.accountOwner.companyId}}"
+  }
+
+  step "CreateUserProject", "project", {
+    apiUrl      "{{ apiUrl }}"
+    authCookie  "{{ step.accountOwner.authCookie }}"
+    userId      "{{ step.accountOwner.id }}"
+  }
+
+  step "GetProjectDetails", "projectDetails", {
+    apiUrl      "{{ apiUrl }}"
+    authCookie  "{{ step.viewer.authCookie }}"
+    projectId   "{{ step.project.projectId }}"
+  }
+
+  assertions {
+    eq "{{ step.projectDetails.success }}", "true"
+  }
+
+}
+
+test "Should not allow Viewer to create project" {
+  description "Viewer should be not able to create projects within their own company"
+  tags "security", "permission"
+
+  step "GenerateRandomEmailAddress", "accountOwnerEmail", {
+    domain "test.invalid"
+  }
+
+  step "CreateUser", "accountOwner", {
+    webUrl "{{ webUrl }}"
+    apiUrl "{{ apiUrl }}"
+    email  "{{ step.accountOwnerEmail.email }}"
+  }
+
+  step "AddViewerToCompany", "viewer", {
+    apiUrl "{{ apiUrl }}"
+    companyId "{{step.accountOwner.companyId}}"
+  }
+
+  step "CreateProject", "createProject", {
+    apiUrl      "{{ apiUrl }}"
+    authCookie  "{{ step.viewer.authCookie }}"
+  }
+
+  assertions {
+    eq "{{ step.createProject.success }}", "false"
+    eq "{{ step.createProject.httpResponseCode }}", "200"
+    eq "{{step.createProject.errorCode}}", "403"
+  }
+}
+
+test "Should not allow Viewer to update project" {
+  description "Viewer should be not able to update projects within their own company"
+  tags "security", "permission"
+
+  step "CreateUser", "accountOwner", {
+    webUrl "{{ webUrl }}"
+    apiUrl "{{ apiUrl }}"
+  }
+
+  step "AddViewerToCompany", "viewer", {
+    apiUrl "{{ apiUrl }}"
+    companyId "{{step.accountOwner.companyId}}"
+  }
+
+  step "CreateUserProject", "projectBeforeUpdate", {
+    apiUrl      "{{ apiUrl }}"
+    authCookie  "{{ step.accountOwner.authCookie }}"
+    userId      "{{ step.accountOwner.id }}"
+  }
+
+  step "UpdateProject", "updateProject", {
+    apiUrl      "{{ apiUrl }}"
+    authCookie  "{{ step.viewer.authCookie }}"
+    projectId   "{{ step.projectBeforeUpdate.projectId }}"
+    projectName "{{ step.projectBeforeUpdate.projectName }}-updated"
+    bidDate          "2019-12-05T00:11:22.000Z"
+    expirationDate   "2019-12-05T11:22:33.000Z"
+    address1         "4600 McAuley Place"
+    address2         "Suite 400"
+    city             "Blue Ash"
+    stateId          "41"
+    postalCode       "45242"
+    countryId        "1"
+  }
+
+  step "GetProjectDetails", "projectAfterUpdate", {
+    apiUrl      "{{ apiUrl }}"
+    authCookie  "{{ step.viewer.authCookie }}"
+    projectId   "{{ step.projectBeforeUpdate.projectId }}"
+  }
+
+  assertions {
+    eq "{{step.updateProject.success}}", "false"
+    eq "{{step.updateProject.httpResponseCode}}", "200"
+    eq "{{step.updateProject.errorCode}}", "403"
+    eq "{{step.projectBeforeUpdate.projectName}}", "{{step.projectAfterUpdate.projectName}}"
+  }
+
+}
+
+test "Should not allow Viewer to delete project" {
+  description "Viewer should be not able to delete projects within their own company"
+  tags "security", "permission"
+
+  step "CreateUser", "accountOwner", {
+    webUrl "{{ webUrl }}"
+    apiUrl "{{ apiUrl }}"
+  }
+
+  step "AddViewerToCompany", "viewer", {
+    apiUrl "{{ apiUrl }}"
+    companyId "{{step.accountOwner.companyId}}"
+  }
+
+  step "CreateUserProject", "project", {
+    apiUrl      "{{ apiUrl }}"
+    authCookie  "{{ step.accountOwner.authCookie }}"
+    userId      "{{ step.accountOwner.id }}"
+  }
+
+  step "DeleteProject", "delete", {
+    apiUrl        "{{ apiUrl }}"
+    authCookie    "{{ step.viewer.authCookie }}"
+    projectId     "{{ step.project.projectId }}"
+  }
+
+  step "GetProjectDetails", "projectDetails", {
+    apiUrl      "{{ apiUrl }}"
+    authCookie  "{{ step.viewer.authCookie }}"
+    projectId   "{{ step.project.projectId }}"
+  }
+
+  assertions {
+    eq "{{ step.delete.httpResponseCode }}", "200"
+    eq "{{ step.delete.errorCode }}", "403"
+    eq "{{ step.delete.reasonCode }}", "Forbidden"
+    eq "{{ step.delete.success }}", "false"
+    eq "{{ step.projectDetails.success }}", "true"
+    eq "{{ step.project.projectName }}", "{{ step.projectDetails.projectName }}"
+  }
+}
+
+test "Should allow viewer to create and get takeoff tab", {
+  description """
+  Viewers should be able to create a takeoff tab,
+  and then request info on all takeoff tabs for that takeoff
+  """
+  tags "security", "permission"
+
+  step "CreateBaselineProjectWithTemplate", "projectAndOwner", {
+      fileName "symbols.pdf"
+      waitForStatus 3
+  }
+
+  step "AddViewerToCompany", "viewer", {
+    apiUrl "{{ apiUrl }}"
+    companyId "{{step.projectAndOwner.companyId}}"
+  }
+
+  step "CreateTakeoffTab", "createTab", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.viewer.authCookie }}"
+    takeoffId         "{{ step.projectAndOwner.takeoffId }}"
+    pageId            "{{ step.projectAndOwner.pageId }}"
+  }
+
+  step "GetTakeoffTabs", "takeoffTab", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.viewer.authCookie }}"
+    takeoffId         "{{ step.projectAndOwner.takeoffId }}"
+  }
+
+  assertions {
+    eq "{{ step.createTab.success }}", "true"
+    eq "{{ step.takeoffTab.success }}", "true"
+    eq "{{ step.takeoffTab.tabName }}", "symbols.pdf"
+    eq "{{ step.takeoffTab.takeoffTabId }}", "{{ step.createTab.takeoffTabId }}"
+  }
+
+}
+
+test "Should allow viewer to update takeoff tab", {
+  tags "security", "permission"
+
+  step "CreateProjectWithPageAndTemplate", "projectAndOwner", {
+      fileName "symbols.pdf"
+      waitForStatus 3
+  }
+
+  step "AddViewerToCompany", "viewer", {
+    apiUrl "{{ apiUrl }}"
+    companyId "{{step.projectAndOwner.companyId}}"
+  }
+
+  step "CreateTakeoffTab", "createTab", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.viewer.authCookie }}"
+    takeoffId         "{{ step.projectAndOwner.takeoffId }}"
+    pageId            "{{ step.projectAndOwner.pageId }}"
+  }
+
+  step "UpdateTakeoffTab", "updateTab", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.viewer.authCookie }}"
+    takeoffId         "{{ step.projectAndOwner.takeoffId }}"
+    pageId            "{{ step.projectAndOwner.pageId }}"
+    takeoffTabId      "{{ step.createTab.takeoffTabId}}"
+    tabOrder          "{{ step.createTab.tabOrder }}"
+    zoomLevel         123
+  }
+
+  assertions {
+    eq "{{ step.createTab.success }}", "true"
+    eq "{{ step.createTab.zoomLevel }}", "-1"
+
+    eq "{{ step.updateTab.isError }}", "false"
+    eq "{{ step.updateTab.zoomLevel }}", "123"
+  }
+
+}
+
+test "Should allow viewer to remove thier takeoff tab", {
+  tags "security", "permission"
+
+  step "CreateBaselineProjectWithTemplate", "projectAndOwner", {
+      fileName "symbols.pdf"
+      waitForStatus 3
+  }
+
+  step "AddViewerToCompany", "viewer", {
+    apiUrl "{{ apiUrl }}"
+    companyId "{{step.projectAndOwner.companyId}}"
+  }
+
+  step "CreateTakeoffTab", "createTab", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.viewer.authCookie }}"
+    takeoffId         "{{ step.projectAndOwner.takeoffId }}"
+    pageId            "{{ step.projectAndOwner.pageId }}"
+  }
+
+  step "GetTakeoffTabs", "takeoffTabBeforeDelete", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.viewer.authCookie }}"
+    takeoffId         "{{ step.projectAndOwner.takeoffId }}"
+  }
+
+  step "DeleteTakeoffTab", "deleteTab", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.viewer.authCookie }}"
+    takeoffTabId      "{{ step.createTab.takeoffTabId }}"
+  }
+
+  step "GetTakeoffTabs", "takeoffTabAfterDelete", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.viewer.authCookie }}"
+    takeoffId         "{{ step.projectAndOwner.takeoffId }}"
+  }
+
+  assertions {
+    eq "{{ step.createTab.success }}", "true"
+
+    eq "{{ step.takeoffTabBeforeDelete.success }}", "true"
+    eq "{{ step.takeoffTabBeforeDelete.takeoffTabId }}", "{{ step.createTab.takeoffTabId }}"
+
+    eq "{{ step.deleteTab.success }}", "true"
+
+    eq "{{ step.takeoffTabAfterDelete.success }}", "true"
+    eq "{{ step.takeoffTabAfterDelete.takeoffTabId }}", "null"
+  }
+
+}
+
+test "Should allow viewer to send javascript log messages", {
+  tags "security", "permission"
+
+  step "CreateProjectWithPageAndTemplate", "projectAndOwner", {
+      fileName "symbols.pdf"
+      waitForStatus 3
+  }
+
+  step "AddViewerToCompany", "viewer", {
+    apiUrl "{{ apiUrl }}"
+    companyId "{{step.projectAndOwner.companyId}}"
+  }
+
+  step "SendJavascriptLogMessages", "sendMessage", {
+    apiUrl        "{{ apiUrl }}"
+    authCookie    "{{ step.viewer.authCookie }}"
+    message       "test message"
+    takeoffId     "{{ step.projectAndOwner.takeoffId }}"
+  }
+
+  assertions {
+    eq "{{ step.sendMessage.success }}", "true"
+  }
+
+}
