@@ -20,6 +20,8 @@
   },
   "homepage": "https://github.com/hreeves19/test-script-inventory#readme",
   "dependencies": {
+    "csv-generate": "^3.4.0",
+    "csv-writer": "^1.6.0",
     "underscore": "^1.13.1"
   },
   "devDependencies": {
