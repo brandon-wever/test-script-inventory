@@ -28,9 +28,9 @@ describe('FileManager.js', () => {
     });
 
     describe.only('printCSV', () => {
-        let path, fileName, header, records;
+        let filePath, fileName, header, records;
         beforeEach(() => {
-            path = 'C:\\Users\\brand\\Projects\\test-script-inventory\\tests\\assets\\';
+            filePath = 'C:\\Users\\brand\\Projects\\test-script-inventory\\tests\\output\\';
             fileName = 'csv-print-test.csv';
             header = [
                 {id: 'test', title: 'TESTNAME'},
@@ -53,7 +53,7 @@ describe('FileManager.js', () => {
             // Init
 
             // Act
-            const result = await FileManager.printCSV(path, fileName, header, records);
+            const result = await FileManager.printCSV(filePath, fileName, header, records);
 
             // Assert
             assert.isTrue(result);
@@ -66,7 +66,7 @@ describe('FileManager.js', () => {
 
             // Act
             try {
-                await FileManager.printCSV(path, fileName, header, records);
+                await FileManager.printCSV(filePath, fileName, header, records);
             } catch(error) {
                 observedError = error;
             }
@@ -75,5 +75,73 @@ describe('FileManager.js', () => {
             assert.isDefined(observedError);
             assert.equal(observedError.message, 'No empty objects are accepted as a record');
         });
+
+        [
+            {path: undefined, fileName: undefined}, 
+            {path: '', fileName: undefined}, 
+            {path: null, fileName: ''}, 
+            {path: undefined, fileName: 'testString'}, 
+            {path: 'validPath', fileName: undefined},
+        ].forEach(parameters => {
+            it(`should throw an error when parameters are not valid: ${JSON.stringify(parameters)}`, async () => {
+                //init
+                let observedError = undefined;
+    
+                // Act
+                try {
+                    await FileManager.printCSV(parameters.path, parameters.fileName, header, records);
+                } catch(error) {
+                    observedError = error;
+                }
+    
+                // Assert
+                assert.isDefined(observedError);
+                assert.equal(observedError.message, 'Empty parameters (path/filename) not accepted');
+            });
+            
+        });
+
+        it('should throw an error when header includes an empty object', async () => {
+            // Init
+            header = [{}];
+            let observedError = undefined;
+
+            // Act
+            try {
+                await FileManager.printCSV(filePath, fileName, header, records);
+            } catch(error) {
+                observedError = error;
+            }
+
+            // Assert
+            assert.isDefined(observedError);
+            assert.equal(observedError.message, 'No empty objects are accepted as a header');
+        });
+
+        //header validation test for id/title
+        [ 
+            [{id: '', title: undefined}], 
+            [{id: null, title: ''}], 
+            [{id: undefined, title: 'testTitle'}], 
+            [{id: 'testId', title: undefined}],
+        ].forEach(headerParameters => {
+            it(`should throw an error when parameters are not valid: ${JSON.stringify(headerParameters)}`, async () => {
+                //init
+                let observedError = undefined;
+    
+                // Act
+                try {
+                    await FileManager.printCSV(filePath, fileName, headerParameters, records);
+                } catch(error) {
+                    observedError = error;
+                }
+    
+                // Assert
+                assert.isDefined(observedError);
+                assert.equal(observedError.message, 'Empty header parameters(id/title) not accepted');
+            });
+            
+        });
+
     });
 });
