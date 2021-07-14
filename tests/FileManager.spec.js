@@ -3,6 +3,11 @@ const FileManager = require('../src/classes/FIleManager');
 const path = require('path');
 const fs = require('fs');
 const _ = require('underscore');
+const moment = require('moment');
+
+function generateFileName(testName) {
+    return `${testName}-${moment().unix()}.csv`;
+}
 
 describe('FileManager.js', () => {
     
@@ -40,11 +45,6 @@ describe('FileManager.js', () => {
             records = [
                 {test: 'testing this', tags: 'relates to x', testFileName: 'this test is in file 1'},
                 {test: 'testing that', tags: 'relates to y', testFileName: 'this test is in file 2'},
-                {test: 'testing blah', tags: 'relates to z', testFileName: 'this test is in file 3'},
-                {test: 'testing blah', tags: 'relates to z', testFileName: 'this test is in file 3'},
-                {test: 'testing blah', tags: 'relates to z', testFileName: 'this test is in file 3'},
-                {test: 'testing blah', tags: 'relates to z', testFileName: 'this test is in file 3'},
-                {test: 'testing blah', tags: 'relates to z', testFileName: 'this test is in file 3'},
                 {tags: 'relates to z', testFileName: 'this test is in file 3'}
             ];
         });
@@ -59,89 +59,97 @@ describe('FileManager.js', () => {
             assert.isTrue(result);
         });
 
-        it('should throw an error when record includes an empty object', async () => {
+        it('should throw error when filename is empty', async () => {
             // Init
-            records = [{}];
-            let observedError = undefined;
+            let observedNullError, observedEmptyError;
 
             // Act
             try {
-                await FileManager.printCSV(filePath, fileName, header, records);
-            } catch(error) {
+                await FileManager.printCSV('path', null, [], []);
+            } catch (error) {
+                observedNullError = error;
+            }
+
+            try {
+                await FileManager.printCSV('path', "", [], []);
+            } catch (error) {
+                observedEmptyError = error;
+            }
+            
+            // Assert
+            assert.isDefined(observedNullError, 'Expected value should have been observed when fileName is null');
+            assert.isDefined(observedEmptyError, 'Expected value should have been observed when fileName is ""');
+        });
+
+        it('should throw error when filePath is empty', async () => {
+            // Init
+            let observedNullError, observedEmptyError;
+
+            // Act
+            try {
+                await FileManager.printCSV(null, 'someFileName', [], []);
+            } catch (error) {
+                observedNullError = error;
+            }
+
+            try {
+                await FileManager.printCSV('', 'someFileName', [], []);
+            } catch (error) {
+                observedEmptyError = error;
+            }
+            
+            // Assert
+            assert.isDefined(observedNullError, 'Expected value should have been observed when fileName is null');
+            assert.isDefined(observedEmptyError, 'Expected value should have been observed when fileName is ""');
+        });
+
+        it('should throw error when header does not include id', async () => {
+            // Init
+            const header = [{id: 1, title: 'test1'}, {title: 'test'}];
+            let observedError;
+
+            // Act
+            try {
+                await FileManager.printCSV('path', generateFileName('this-should-not-be-here'), header, []);
+            } catch (error) {
                 observedError = error;
             }
 
             // Assert
             assert.isDefined(observedError);
-            assert.equal(observedError.message, 'No empty objects are accepted as a record');
         });
 
-        [
-            {path: undefined, fileName: undefined}, 
-            {path: '', fileName: undefined}, 
-            {path: null, fileName: ''}, 
-            {path: undefined, fileName: 'testString'}, 
-            {path: 'validPath', fileName: undefined},
-        ].forEach(parameters => {
-            it(`should throw an error when parameters are not valid: ${JSON.stringify(parameters)}`, async () => {
-                //init
-                let observedError = undefined;
-    
-                // Act
-                try {
-                    await FileManager.printCSV(parameters.path, parameters.fileName, header, records);
-                } catch(error) {
-                    observedError = error;
-                }
-    
-                // Assert
-                assert.isDefined(observedError);
-                assert.equal(observedError.message, 'Empty parameters (path/filename) not accepted');
-            });
-            
-        });
-
-        it('should throw an error when header includes an empty object', async () => {
+        it('should throw error when header does not include title', async () => {
             // Init
-            header = [{}];
-            let observedError = undefined;
-
+            const header = [{id: 1, title: 'test1'}, {id: 2}];
+            let observedError;
+    
             // Act
             try {
-                await FileManager.printCSV(filePath, fileName, header, records);
-            } catch(error) {
+                await FileManager.printCSV('path', generateFileName('this-should-not-be-here'), header, []);
+            } catch (error) {
                 observedError = error;
             }
-
+    
             // Assert
             assert.isDefined(observedError);
-            assert.equal(observedError.message, 'No empty objects are accepted as a header');
         });
 
-        //header validation test for id/title
-        [ 
-            [{id: '', title: undefined}], 
-            [{id: null, title: ''}], 
-            [{id: undefined, title: 'testTitle'}], 
-            [{id: 'testId', title: undefined}],
-        ].forEach(headerParameters => {
-            it(`should throw an error when parameters are not valid: ${JSON.stringify(headerParameters)}`, async () => {
-                //init
-                let observedError = undefined;
+        it('should throw error when a record includes a property that does not exist in header', async () => {
+            // Init
+            const headers = [{id: 'test1', title: 'ANYTHING'}, {id: 'test2', title: 'ANYTHING'}];
+            const records = [{test1: '', test2: ''}, {test1: 'some value', test3: 'does not exist in list'}];
+            let observedError;
     
-                // Act
-                try {
-                    await FileManager.printCSV(filePath, fileName, headerParameters, records);
-                } catch(error) {
-                    observedError = error;
-                }
+            // Act
+            try {
+                await FileManager.printCSV('path', generateFileName('this-should-not-be-here'), headers, records);
+            } catch (error) {
+                observedError = error;
+            }
     
-                // Assert
-                assert.isDefined(observedError);
-                assert.equal(observedError.message, 'Empty header parameters(id/title) not accepted');
-            });
-            
+            // Assert
+            assert.isDefined(observedError);
         });
-
     });
 });

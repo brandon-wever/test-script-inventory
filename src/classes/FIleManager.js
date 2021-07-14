@@ -16,37 +16,22 @@ const FileManager = {
         return null;
     },
     printCSV: async (filePath, fileName, header, records) => {
-        
-        // Validation
-        // TODO: Validation for filePath, fileName, header, and records exist
-        if(!filePath || !fileName){
-            throw new Error('Empty parameters (path/filename) not accepted');
+        if (!fileName || !filePath) {
+            throw new Error('fileName or filePath is not defined');
         }
-        if (_.find(header, (header) => JSON.stringify(header) === JSON.stringify({}))) {
-            throw new Error('No empty objects are accepted as a header');
-        }
-        if (process.env.NODE_ENV === 'test') {
-            filePath = path.resolve(__dirname + '/../../tests/output/');
-        }
-        // TODO: Update package.json to handle undefined directory
-        
-        // TODO: Validation on record, every element has valid header ids
 
-        // Throws an error if a record has an empty object
-        if (_.find(records, (record) => JSON.stringify(record) === JSON.stringify({}))) {
-            throw new Error('No empty objects are accepted as a record');
+        if (_.find(header, (head) => !head.id || !head.title)) {
+            throw new Error('header 0 does not have an id');
         }
-        // TODO: Validation on header, every element should have some id and title
-        // if() {
-        //     throw new Error('Empty header parameters(id/title) not accepted');
-        // }
-        for (let i = 0; i < header.length; i++) {
-            if (!header[i].id) {
-                throw new Error('Empty header parameters(id/title) not accepted');
-            }
-            if (!header[i].title) {
-                throw new Error('Empty header parameters(id/title) not accepted');
-            }
+
+        const ids = _.pluck(header, 'id');
+        const result = _.find(records, (record) => {
+            const keys = _.keys(record);
+            return _.find(keys, (key) => !ids.includes(key));
+        });
+
+        if (result) {
+            throw new Error(`A record includes an unused property: ${JSON.stringify(result)}. Accepted keys are: ${ids.join(', ')}.`);
         }
 
         const csvWriter = createCsvWriter(
