@@ -32,7 +32,7 @@ describe('FileManager.js', () => {
         });
     });
 
-    describe.only('printCSV', () => {
+    describe('printCSV', () => {
         let filePath, fileName, header, records;
         beforeEach(() => {
             filePath = 'C:\\Users\\brand\\Projects\\test-script-inventory\\tests\\output\\';
