@@ -24,6 +24,13 @@ const FileManager = {
             throw new Error('header 0 does not have an id');
         }
 
+        if (process.env.NODE_ENV === 'test') {
+            const outputDir = path.resolve(__dirname + '../../../tests/output');
+            if (!fs.existsSync(outputDir)) {
+                fs.mkdirSync(outputDir);
+            }
+        }
+
         const ids = _.pluck(header, 'id');
         const result = _.find(records, (record) => {
             const keys = _.keys(record);
