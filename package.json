@@ -6,8 +6,8 @@
   "scripts": {
     "build": "node src/index.js",
     "build:watch": "nodemon src/index.js",
-    "test": "set NODE_ENV=test && mocha --reporter spec --exit tests/",
-    "test:watch": "set NODE_ENV=test && nodemon --exec \"mocha --reporter spec --exit tests\"/"
+    "test": "set NODE_ENV=test&& mocha --reporter spec --exit tests/",
+    "test:watch": "set NODE_ENV=test&& nodemon --exec \"mocha --reporter spec --exit tests\"/"
   },
   "repository": {
     "type": "git",
@@ -20,6 +20,9 @@
   },
   "homepage": "https://github.com/hreeves19/test-script-inventory#readme",
   "dependencies": {
+    "csv-generate": "^3.4.0",
+    "csv-writer": "^1.6.0",
+    "moment": "^2.29.1",
     "underscore": "^1.13.1"
   },
   "devDependencies": {

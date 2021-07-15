@@ -1,0 +1,88 @@
+test "Adding an item to my company" {
+  description "Adds an item to my company"
+  tags "cafecito", "items"
+
+  step "TestBaseline", "baseline", {
+    apiUrl "{{ apiUrl }}"
+    subscriptionId          "{{ subscriptionPro }}"
+    subscriptionTermId      "{{ termForever }}"
+    subscriptionStatusId    "{{ statusActive }}"
+    userLevelId             "{{ userLevelAccountOwner }}"
+    pricingStrategy         "{{ pricingStrategyPerUser }}"
+  }
+
+  step "RunCafecito", "cafecito", {
+    webUrl        "{{ webUrl }}"
+    testUrl       "app/#"
+    cafecitoTest  "Creates a new item"
+    testData      '''{
+      "cookieValue"         : "{{ step.baseline.authCookie }}",
+      "ownerEmailAddress"   : "{{ step.baseline.email }}"
+    }'''
+  }
+}
+
+test "Editing an item that belongs to my company" {
+  description "Edits an item that belongs to my company"
+  tags "cafecito", "items"
+
+  step "TestBaseline", "baseline", {
+    apiUrl "{{ apiUrl }}"
+    subscriptionId          "{{ subscriptionPro }}"
+    subscriptionTermId      "{{ termForever }}"
+    subscriptionStatusId    "{{ statusActive }}"
+    userLevelId             "{{ userLevelAccountOwner }}"
+    pricingStrategy         "{{ pricingStrategyPerUser }}"
+  }
+
+  step "CreateItemFolder", "itemFolder", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.baseline.authCookie }}"
+    name              "test item folder"
+  }
+
+  step "CreateItem", "createItem", {
+    apiUrl            "{{ apiUrl }}"
+    authCookie        "{{ step.baseline.authCookie }}"
+    name              "Created Item"
+    itemFolderId      "{{ step.itemFolder.id }}"
+    unitOfMeasureId   "2"
+    costTypeId        "3"
+    cost              "100"
+  }
+
+  step "RunCafecito", "cafecito", {
+    webUrl        "{{ webUrl }}"
+    testUrl       "app/#"
+    cafecitoTest  "Edits an existing item that belongs to my company"
+    testData      '''{
+      "cookieValue"         : "{{ step.baseline.authCookie }}",
+      "ownerEmailAddress"   : "{{ step.baseline.email }}",
+      "itemId"              : "{{ step.createItem.id }}"
+    }'''
+  }
+}
+
+test "Adding a cost to an item from the STACK catalog" {
+  description "Adds a cost to to "
+  tags "cafecito", "items"
+
+  step "TestBaseline", "baseline", {
+    apiUrl "{{ apiUrl }}"
+    subscriptionId          "{{ subscriptionPro }}"
+    subscriptionTermId      "{{ termForever }}"
+    subscriptionStatusId    "{{ statusActive }}"
+    userLevelId             "{{ userLevelAccountOwner }}"
+    pricingStrategy         "{{ pricingStrategyPerUser }}"
+  }
+
+  step "RunCafecito", "cafecito", {
+    webUrl        "{{ webUrl }}"
+    testUrl       "app/#"
+    cafecitoTest  "Add a cost to a STACK catalog item"
+    testData      '''{
+      "cookieValue"         : "{{ step.baseline.authCookie }}",
+      "ownerEmailAddress"   : "{{ step.baseline.email }}"
+    }'''
+  }
+}
