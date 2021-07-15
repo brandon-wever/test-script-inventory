@@ -35,7 +35,7 @@ describe('FileManager.js', () => {
     describe('printCSV', () => {
         let filePath, fileName, header, records;
         beforeEach(() => {
-            filePath = 'C:\\Users\\brand\\Projects\\test-script-inventory\\tests\\output\\';
+            filePath = './tests/output';
             fileName = 'csv-print-test.csv';
             header = [
                 {id: 'test', title: 'TESTNAME'},
