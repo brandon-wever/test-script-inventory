@@ -1,2 +1,2 @@
 node_modules
-tests/output/*
+tests/output/csv-print-test.csv
