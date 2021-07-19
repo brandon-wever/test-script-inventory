@@ -152,4 +152,35 @@ describe('FileManager.js', () => {
             assert.isDefined(observedError);
         });
     });
+
+    describe('processFile', () => {
+        it('should find all matches for tests in catalog.nw.test', () => {
+            // Init
+            const filePath = path.resolve(__dirname + "/assets/catalog.nw.test");
+            const testString = FileManager.readFile(filePath);
+
+            // Method
+            const result = FileManager.processFile(testString);
+
+            // Assert
+            assert.isArray(result);
+            assert.deepEqual(result[0], {test: 'test "Verify catalog access for plus user"'});
+            assert.deepEqual(result[1], {test: 'test "Verify catalog access for pro user"'});
+        });
+
+        it('should find all matches for tests items.cafecito.test', () => {
+            // Init
+            const filePath = path.resolve(__dirname + "/assets/items.cafecito.test");
+            const testString = FileManager.readFile(filePath);
+
+            // Method
+            const result = FileManager.processFile(testString);
+
+            // Assert
+            assert.isArray(result)
+            assert.deepEqual(result[0], {test: 'test "Adding an item to my company"'});
+            assert.deepEqual(result[1], {test: 'test "Editing an item that belongs to my company"'});
+            assert.deepEqual(result[2], {test: 'test "Adding a cost to an item from the STACK catalog"'});
+        });
+    });
 });

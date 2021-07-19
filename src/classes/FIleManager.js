@@ -5,15 +5,27 @@ const generate = require('csv-generate');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter; //testing a csv write
 
 const FileManager = {
+    HEADERS: [{id: 'test', title: 'TESTNAME'}, {id: 'tags', title: 'TAGS'}],
+    REGEX: {
+        test: /test\s*"(\w+\s*)*"/gm
+    },    
     readFile: (filepath) => {
         try {
-            return fs.readFileSync(filepath, 'utf8');
+            return fs.readFileSync(filepath, 'utf8'); 
         } catch(error) {
             // TODO: Log error with winston
             console.error(error);
         }
 
         return null;
+    }, 
+    processFile: (input) => { //TODO: Make processFile function? --> parses file and pulls 'relavent' info (test, description, tags)
+        // Header
+        const result = _.map(input.match(FileManager.REGEX.test), (matchString) => {
+            return { test: matchString };
+        });
+        return result;
+        // return 
     },
     printCSV: async (filePath, fileName, header, records) => {
         if (!fileName || !filePath) {
@@ -48,6 +60,8 @@ const FileManager = {
             }
         );
         
+        //TODO: Loop through write multiple times, awaiting for each (1 Write per input file?)
+        //    --> can define records as an array of arrays (internal array can be each file's contents and records is all files)
         try {
             await csvWriter.writeRecords(records);       // returns a promise
             return true;
